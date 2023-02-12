@@ -12,8 +12,8 @@ INCLUDELIB \user32.lib
 INCLUDELIB \dwmapi.lib
 
 .DATA                     			   
-ClassName db "SimpleWinClass",0        ; the name of our window class
-AppName   db "Our First Window",0        ; the name of our window
+ClassName db "GlassWinClass",0        ; the name of our window class
+AppName   db "Glass Window",0        ; the name of our window
 
 .DATA?                				   
 hInstance HINSTANCE ?        		   ; Instance handle of our program

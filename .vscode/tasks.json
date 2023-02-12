@@ -5,7 +5,7 @@
     "tasks": [
         {
             "label": "Assemble with MASM",
-            "command": ".\\masmEXE.bat",
+            "command": ".\\build.bat",
             "type": "shell",
             "args": [
                 "${fileDirname}\\${fileBasenameNoExtension}",
