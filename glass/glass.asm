@@ -34,7 +34,7 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
     LOCAL wc:WNDCLASSEX                                            ; create local variables on stack
     LOCAL msg:MSG
     LOCAL hwnd:HWND
-	LOCAL margins:MARGINS
+    LOCAL margins:MARGINS
 
     mov   wc.cbSize,SIZEOF WNDCLASSEX                   ; fill values in members of wc
     mov   wc.style, CS_HREDRAW or CS_VREDRAW
@@ -51,7 +51,7 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
     mov   wc.hIcon,eax
     mov   wc.hIconSm,eax
     invoke LoadCursor,NULL,IDC_ARROW
-	
+    
     mov   wc.hCursor,eax
     invoke RegisterClassEx, addr wc                       ; register our window class
 
@@ -71,11 +71,11 @@ WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
     invoke ShowWindow, hwnd,CmdShow               ; display our window on desktop
     invoke UpdateWindow, hwnd                                 ; refresh the client area
 
-	mov margins.cxLeftWidth, MAXDWORD
-	mov margins.cxRightWidth, MAXDWORD
-	mov margins.cyTopHeight, MAXDWORD
-	mov margins.cyBottomHeight, MAXDWORD
-	invoke DwmExtendFrameIntoClientArea, hwnd, addr margins
+    mov margins.cxLeftWidth, MAXDWORD
+    mov margins.cxRightWidth, MAXDWORD
+    mov margins.cyTopHeight, MAXDWORD
+    mov margins.cyBottomHeight, MAXDWORD
+    invoke DwmExtendFrameIntoClientArea, hwnd, addr margins
 
     .WHILE TRUE                                                         ; Enter message loop
                 invoke GetMessage, ADDR msg,NULL,0,0

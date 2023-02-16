@@ -5,94 +5,133 @@ option casemap:none
 INCLUDE C:\masm32\include\windows.inc
 INCLUDE C:\masm32\include\user32.inc
 INCLUDE C:\masm32\include\kernel32.inc
-INCLUDE custom_macros.inc
+INCLUDE C:\masm32\include\wininet.inc
 
 INCLUDELIB \kernel32.lib
 INCLUDELIB \user32.lib    
+INCLUDELIB \wininet.lib    
 
 WinMain proto :DWORD,:DWORD,:DWORD,:DWORD
 
-.DATA                     			   
-ClassName db "WallpaperWinClass",0        ; the name of our window class
-AppName   db "Wallpaper Window",0        ; the name of our window
-WallPath  db "E:\Guilherme\Pictures\MEROMEI.jpg",0
+.DATA                     			  
+_BytesToRead equ 10000 
+_wallPath  db "E:\Guilherme\Pictures\MEROMEI - Copia.jpg",0
+_agent    db "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.41",0
+_endpoint  db "https://www.bing.com/HPImageArchive.aspx?format=xml&idx=0&n=1&mkt=pt-BR",0
+_urlTagBegin db "<url>",0
+_urlTagEnd db "</url>",0
 
-.DATA?                				   
-hInstance HINSTANCE ?        		   ; Instance handle of our program
-CommandLine LPSTR ?
+.DATA?
+_InternetHandle DWORD ?
+_FileHandle DWORD ?
+_Response db 10000 dup(?)
+_BytesRead DWORD ?
+_imageURL db 200 dup(?)
+_urlTagBeginAddress DWORD ?
+_urlTagEndAddress DWORD ?
+_urlLength DWORD ?
 
-.CODE                				 
-start:
-invoke GetModuleHandle, NULL           ; get the instance handle of our program.
-                                       ; Under Win32, hmodule==hinstance mov hInstance,eax
-mov hInstance, eax
-invoke GetCommandLine                  ; get the command line. You don't have to call this function IF
-                                       ; your program doesn't process the command line.
-mov CommandLine,eax
-invoke WinMain, hInstance,NULL,CommandLine, SW_SHOWDEFAULT        ; call the main function
-invoke ExitProcess, eax                ; quit our program. The exit code is returned in eax from WinMain.
+.CODE
+_start:
 
-WinMain proc hInst:HINSTANCE,hPrevInst:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
-    LOCAL wc:WNDCLASSEX                                            ; create local variables on stack
-    LOCAL msg:MSG
-    LOCAL hwnd:HWND
+;INCLUDE custom_macros.inc
 
-    mov   wc.cbSize,SIZEOF WNDCLASSEX                   ; fill values in members of wc
-    mov   wc.style, CS_HREDRAW or CS_VREDRAW
-    mov   wc.lpfnWndProc, OFFSET WndProc
-    mov   wc.cbClsExtra,NULL
-    mov   wc.cbWndExtra,NULL
-    push  hInstance
-    pop   wc.hInstance
-    mov   wc.hbrBackground,COLOR_WINDOW+1
-    mov   wc.lpszMenuName,NULL
-    mov   wc.lpszClassName,OFFSET ClassName
-    invoke LoadIcon,NULL,IDI_APPLICATION
+_GetImageURL:
+    ; Get Internet Handler
+    invoke InternetOpen, addr _agent, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, NULL
+    test eax, eax
+    jz _CloseConnection
+    mov [_InternetHandle],eax
 
-    mov   wc.hIcon,eax
-    mov   wc.hIconSm,eax
-    invoke LoadCursor,NULL,IDC_ARROW
-	
-    mov   wc.hCursor,eax
-    invoke RegisterClassEx, addr wc                       ; register our window class
+    ; Call API URL
+    invoke InternetOpenUrl, _InternetHandle, addr _endpoint, NULL, NULL, NULL, NULL
+    test eax, eax
+    jz _CloseConnection
+    mov [_FileHandle],eax
 
-    invoke CreateWindowEx,002000000h,\
-                ADDR ClassName,\
-                ADDR AppName,\
-                WS_OVERLAPPEDWINDOW,\
-                CW_USEDEFAULT,\
-                CW_USEDEFAULT,\
-                CW_USEDEFAULT,\
-                CW_USEDEFAULT,\
-                NULL,\
-                NULL,\
-                hInst,\
-                NULL
-    mov   hwnd,eax
-    invoke ShowWindow, hwnd,CmdShow               ; display our window on desktop
-    invoke UpdateWindow, hwnd                                 ; refresh the client area
+    ; Get API Response
+    invoke InternetReadFile, _FileHandle, addr _Response, _BytesToRead, addr _BytesRead
+    test eax, eax
+    jz _CloseConnection
+    mov eax,[_BytesRead]
 
-    invoke SystemParametersInfo, SPI_SETDESKWALLPAPER, 0, addr WallPath, SPIF_UPDATEINIFILE
+    ; Extract URL from response string
+    cld ; clear direction flag
+    mov esi, offset _Response ; container string
+    mov edi, offset _urlTagBegin ; string to look for
+    mov ecx, _BytesRead ; length of container
 
-    .WHILE TRUE                                                         ; Enter message loop
-                invoke GetMessage, ADDR msg,NULL,0,0
-                .BREAK .IF (!eax)
-                invoke TranslateMessage, ADDR msg
-                invoke DispatchMessage, ADDR msg
-    .ENDW
-    mov     eax,msg.wParam                                            ; return exit code in eax
-    ret
-WinMain endp
+    search_urlTagBegin:
+        push ecx
+        push esi
+        push edi
 
-WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
-    .IF uMsg==WM_DESTROY                           ; if the user closes our window
-        invoke PostQuitMessage,NULL             ; quit our application
-    .ELSE
-        invoke DefWindowProc,hWnd,uMsg,wParam,lParam     ; Default message processing
-        ret
-    .ENDIF
-    xor eax,eax
-    ret
-WndProc endp
+        mov ecx, sizeof _urlTagBegin - 1 ; discard null terminator
+        repe cmpsb
+        je found_urlTagBegin
 
-END start
+        pop edi
+        pop esi
+        pop ecx
+        inc esi
+        loop search_urlTagBegin ; loop ecx times
+        jmp _CloseConnection
+        
+    found_urlTagBegin:
+        mov _urlTagBeginAddress, esi ; keep begin tag address
+
+        cld
+        mov esi, offset _Response 
+        mov edi, offset _urlTagEnd
+        mov ecx, _BytesRead
+
+    search_urlTagEnd:
+        push ecx
+        push esi
+        push edi
+
+        mov ecx, sizeof _urlTagEnd - 1
+        repe cmpsb
+        je found_urlTagEnd
+
+        pop edi
+        pop esi
+        pop ecx
+        inc esi
+        loop search_urlTagEnd
+        jmp _CloseConnection
+
+    found_urlTagEnd:
+        mov _urlTagEndAddress, esi ; keep end tag address
+        sub _urlTagEndAddress, sizeof _urlTagEnd - 1
+        mov eax, _urlTagBeginAddress
+        mov ebx, _urlTagEndAddress
+        sub ebx, eax
+        mov _urlLength, ebx
+
+        cld
+        mov esi, _urlTagBeginAddress
+        lea si, [esi] ;start position
+        lea di, _imageURL ;address of string to compose
+        mov ecx, _urlLength
+        rep movsb
+        mov al, 0
+        stosb
+        invoke MessageBox, 0, addr _imageURL, addr _imageURL, 0h
+
+
+_SetWallpaper:
+    invoke SystemParametersInfo, SPI_SETDESKWALLPAPER, 0, addr _wallPath, SPIF_UPDATEINIFILE
+    jmp _CloseConnection
+
+
+_CloseConnection:
+
+    invoke InternetCloseHandle, [_FileHandle]
+    invoke InternetCloseHandle, [_InternetHandle]
+
+
+_Quit:
+    invoke ExitProcess, 0 
+
+END _start
