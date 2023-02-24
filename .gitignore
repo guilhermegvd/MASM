@@ -3,6 +3,7 @@
 
 .vscode/*
 notes.txt
+*.jpg
 
 ### Assembler ###
 *.exe
