@@ -1,0 +1,30 @@
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK 0x3F
+FILEFLAGS 0x0
+FILEOS 0x4
+FILETYPE 0x1
+FILESUBTYPE 0x0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "Guilherme Vieira Dutra"
+            VALUE "FileDescription", "Sets Bing wallpaper of the day into your screen."
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "Wallpaper"
+            VALUE "LegalCopyright", "Copyright 2023 Guilherme Vieira Dutra"
+            VALUE "OriginalFilename", "wallpaper.exe"
+            VALUE "ProductName", "Wallpaper"
+            VALUE "ProductVersion", "1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0, 0x4b0
+    END
+END
+
+2 ICON "icons/wallpaper.ico"
