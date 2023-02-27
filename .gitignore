@@ -4,6 +4,7 @@
 .vscode/*
 notes.txt
 *.jpg
+*.bmp
 
 ### Assembler ###
 *.exe
