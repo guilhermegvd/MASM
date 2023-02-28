@@ -35,7 +35,7 @@ INCLUDE string_macros.inc
 _start:
 
 ; OPEN CONNECTION **************************************************************
-    invoke MessageBoxA, 0, addr _imageURL, addr _imageURL, 0h
+
     ; Get Internet Handler
     invoke InternetOpen, addr _agent, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, NULL
     test eax, eax
@@ -76,7 +76,7 @@ _start:
 
 ; SET IMAGE AS WALLPAPER *******************************************************
     
-    invoke SystemParametersInfo, SPI_SETDESKWALLPAPER, 0, addr _wallpaperPath, SPIF_UPDATEINIFILE
+    invoke SystemParametersInfo, SPI_SETDESKWALLPAPER, 0, addr _wallpaperPath, SPIF_UPDATEINIFILE OR SPIF_SENDWININICHANGE
 
 ; QUIT PROGRAM *****************************************************************
 
